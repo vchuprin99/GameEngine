@@ -1,4 +1,0 @@
-C:/Programming/GameEngine/build/CMakeFiles/ALL_BUILD.dir
-C:/Programming/GameEngine/build/CMakeFiles/ZERO_CHECK.dir
-C:/Programming/GameEngine/build/GESDK/CMakeFiles/GameEngineSDK.dir
-C:/Programming/GameEngine/build/GE/CMakeFiles/GameEngineCore.dir
