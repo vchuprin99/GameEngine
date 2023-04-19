@@ -1,0 +1,3 @@
+namespace GameEngine {
+	void sayHello();
+}

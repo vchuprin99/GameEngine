@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.25)
+
+project(GameEngineSDK)
+
+add_executable(SDK src/main.cpp)
+target_link_libraries(SDK core)

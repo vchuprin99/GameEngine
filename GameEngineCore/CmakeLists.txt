@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.25)
+
+project(GameEngineCore)
+
+add_library(core STATIC include/helloWorld.h src/helloWorld.cpp)
+target_include_directories(core PUBLIC include)
