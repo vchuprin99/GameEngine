@@ -1,0 +1,9 @@
+[submodule "GameEngineCore/external/glfw"]
+	path = GameEngineCore/external/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "GameEngineCore/external/spdlog"]
+	path = GameEngineCore/external/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "GameEngineCore/external/imgui"]
+	path = GameEngineCore/external/imgui
+	url = https://github.com/ocornut/imgui.git

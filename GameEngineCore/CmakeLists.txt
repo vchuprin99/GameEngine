@@ -2,5 +2,44 @@ cmake_minimum_required(VERSION 3.25)
 
 project(GameEngineCore)
 
-add_library(core STATIC include/helloWorld.h src/helloWorld.cpp)
+set(CORE_PUBLIC_INCLUDES
+    include/log.h
+    include/application.h
+    include/window.h
+    include/events.h
+)
+set(CORE_PRIVATE_SOURCES 
+    src/application.cpp
+    src/window.cpp
+)
+
+add_library(core STATIC ${CORE_PUBLIC_INCLUDES} ${CORE_PRIVATE_SOURCES})
 target_include_directories(core PUBLIC include)
+
+add_subdirectory(external/glfw)
+target_link_libraries(core PRIVATE glfw)
+add_subdirectory(external/spdlog)
+target_link_libraries(core PRIVATE spdlog)
+add_subdirectory(external/glad)
+target_link_libraries(core PRIVATE glad)
+
+target_compile_features(core PUBLIC cxx_std_17)
+
+set(IMGUI_SOURCES
+    external/imgui/imgui.h
+    external/imgui/backends/imgui_impl_glfw.h
+    external/imgui/backends/imgui_impl_opengl3.h
+    external/imgui/imgui.cpp
+    external/imgui/backends/imgui_impl_glfw.cpp
+    external/imgui/backends/imgui_impl_opengl3.cpp
+    external/imgui/imgui_demo.cpp
+    external/imgui/imgui_draw.cpp
+    external/imgui/imgui_tables.cpp
+    external/imgui/imgui_widgets.cpp
+)
+
+add_library(imgui STATIC ${IMGUI_SOURCES})
+target_include_directories(imgui PUBLIC external)
+target_include_directories(imgui PUBLIC external/imgui)
+target_link_libraries(imgui PRIVATE glad glfw)
+target_link_libraries(core PRIVATE imgui)
