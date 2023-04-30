@@ -1,7 +1,5 @@
 #include "application.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <log.h>
 
 int GameEngine::Application::start(uint width, uint height, const char* title)
@@ -45,7 +43,6 @@ int GameEngine::Application::start(uint width, uint height, const char* title)
         m_window->on_update();
         on_update();
     }
-
 
     return 0;
 }
