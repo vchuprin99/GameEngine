@@ -5,16 +5,21 @@ project(GameEngineCore)
 set(CORE_PUBLIC_INCLUDES
     include/log.h
     include/application.h
-    include/window.h
     include/events.h
+)
+set(CORE_PRIVATE_INCLUDES
+    include/window.h
+    src/rendering/OpenGL/shader.h
 )
 set(CORE_PRIVATE_SOURCES 
     src/application.cpp
     src/window.cpp
+    src/rendering/OpenGL/shader.cpp
 )
 
-add_library(core STATIC ${CORE_PUBLIC_INCLUDES} ${CORE_PRIVATE_SOURCES})
+add_library(core STATIC ${CORE_PUBLIC_INCLUDES} ${CORE_PRIVATE_INCLUDES} ${CORE_PRIVATE_SOURCES})
 target_include_directories(core PUBLIC include)
+target_include_directories(core PRIVATE src)
 
 add_subdirectory(external/glfw)
 target_link_libraries(core PRIVATE glfw)
