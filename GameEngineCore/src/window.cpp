@@ -1,6 +1,7 @@
 #include "window.h"
 
 #include "rendering/OpenGL/shader.h"
+#include "rendering/OpenGL/vertexBuffer.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -15,8 +16,9 @@
 namespace GameEngine {
     static bool m_gladInitialized = false;
 
-    GLuint vao, points_vbo, color_vbo;
+    GLuint vao;
     std::unique_ptr<Shader> shader;
+    std::unique_ptr<VertexBuffer> pointBuffer, colorBuffer;
 
     float points[] = {
         0, 0.5, 0,
@@ -166,20 +168,18 @@ namespace GameEngine {
                 }
         });
 
-        glGenBuffers(1, &points_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
+        pointBuffer = std::make_unique<VertexBuffer>(points, sizeof(points), VertexBuffer::Usage::Static);
+        colorBuffer = std::make_unique<VertexBuffer>(color, sizeof(color), VertexBuffer::Usage::Dynamic);
 
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
-        glBindBuffer(GL_ARRAY_BUFFER, points_vbo);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+        pointBuffer->bind();
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
+        colorBuffer->bind();
+        glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, nullptr);
+
         glEnableVertexAttribArray(0);
-
-        glGenBuffers(1, &color_vbo);
-
-        glBindBuffer(GL_ARRAY_BUFFER, color_vbo);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
         glEnableVertexAttribArray(1);
 
         shader = std::make_unique<Shader>(vertexShader, fragmentShader);
@@ -193,8 +193,7 @@ namespace GameEngine {
         glClearColor(0.5, 0.5, 0.5, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glBindBuffer(GL_ARRAY_BUFFER, color_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(color), color, GL_DYNAMIC_DRAW);
+        colorBuffer->update(0, sizeof(color), color);
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
