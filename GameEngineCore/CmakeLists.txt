@@ -11,12 +11,16 @@ set(CORE_PRIVATE_INCLUDES
     include/window.h
     src/rendering/OpenGL/shader.h
     src/rendering/OpenGL/vertexBuffer.h
+    src/rendering/OpenGL/vertexArray.h
+    src/rendering/OpenGL/indexBuffer.h
 )
 set(CORE_PRIVATE_SOURCES 
     src/application.cpp
     src/window.cpp
     src/rendering/OpenGL/shader.cpp
     src/rendering/OpenGL/vertexBuffer.cpp
+    src/rendering/OpenGL/vertexArray.cpp
+    src/rendering/OpenGL/indexBuffer.cpp
 )
 
 add_library(core STATIC ${CORE_PUBLIC_INCLUDES} ${CORE_PRIVATE_INCLUDES} ${CORE_PRIVATE_SOURCES})
