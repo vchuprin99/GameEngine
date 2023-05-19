@@ -33,6 +33,8 @@ add_subdirectory(external/spdlog)
 target_link_libraries(core PRIVATE spdlog)
 add_subdirectory(external/glad)
 target_link_libraries(core PRIVATE glad)
+add_subdirectory(external/glm)
+target_link_libraries(core PRIVATE glm)
 
 target_compile_features(core PUBLIC cxx_std_17)
 
