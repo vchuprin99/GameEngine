@@ -24,6 +24,7 @@ namespace GameEngine {
 		void on_update();
 		inline uint getWidth() const { return winProps.width; }
 		inline uint getHeight() const { return winProps.height; }
+		inline float getAspect() const { return winProps.aspect_ratio; }
 		inline void setEventCallback(const EventCallbackFn& fn) { winProps.eventCallback = fn; }
 
 	private:
@@ -32,6 +33,7 @@ namespace GameEngine {
 
 		struct WinProps {
 			uint width, height;
+			float aspect_ratio;
 			std::string title;
 			EventCallbackFn eventCallback;
 		} winProps;

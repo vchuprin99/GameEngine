@@ -76,3 +76,13 @@ void GameEngine::Shader::unbind()
 {
 	glUseProgram(0);
 }
+
+void GameEngine::Shader::setFloat(const char* uniform, float value)
+{
+	glUniform1f(glGetUniformLocation(m_id, uniform), value);
+}
+
+void GameEngine::Shader::setMat4(const char* uniform, const glm::mat4& matrix)
+{
+	glUniformMatrix4fv(glGetUniformLocation(m_id, uniform), 1, false, glm::value_ptr(matrix));
+}

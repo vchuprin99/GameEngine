@@ -4,18 +4,19 @@
 #include "rendering/OpenGL/vertexBuffer.h"
 #include "rendering/OpenGL/vertexArray.h"
 #include "rendering/OpenGL/indexBuffer.h"
+#include "rendering/camera.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <log.h>
 
-#include <glm/glm/mat4x4.hpp>
+#include <glm/mat4x4.hpp>
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 
-#define GET_WINPROPS WinProps* winProps = (WinProps*)(glfwGetWindowUserPointer(window))
+#define GET_WINPROPS WinProps* winProps = reinterpret_cast<WinProps*>(glfwGetWindowUserPointer(window))
 
 namespace GameEngine {
 	static bool m_gladInitialized = false;
@@ -25,13 +26,43 @@ namespace GameEngine {
 	std::unique_ptr<VertexBuffer> vertexBuffer;
 	std::unique_ptr<IndexBuffer> indexBuffer;
 
-	float points[] = {
-		 0.5,  0.5, 0,      1, 0, 0,
-		 0.5, -0.5, 0,      0, 1, 0,
-		-0.5,  0.5, 0,      0, 0, 1,
-		-0.5, -0.5, 0,      0, 1, 1
+	float scale[3] = { 0.5, 0.5, 0.5 };
+	float rotate = 0;
+
+	float camera_position[3] = { 0 };
+	float camera_rotation[3] = { 0 };
+	bool isPerspectiveMode = true;
+	Camera camera(
+		glm::vec3(camera_position[0], camera_position[1], camera_position[2]),
+		glm::vec3(camera_rotation[0], camera_rotation[1], camera_rotation[2])
+	);
+
+	glm::mat4 scale_matrix = {
+		scale[0], 0, 0, 0,
+		0, scale[1], 0, 0,
+		0, 0, scale[2], 0,
+		0, 0, 0, 1
 	};
-	GLuint indices[] = { 0, 1, 2, 1, 2, 3 };
+	glm::mat4 rotate_matrix = {
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
+	};
+	glm::mat4 model_matrix = rotate_matrix * scale_matrix;
+
+	float points[] = {
+		 0.5,  0.5, -6,      1, 0, 0,
+		 0.5, -0.5, -6,      0, 1, 0,
+		-0.5,  0.5, -6,      0, 0, 1,
+		-0.5, -0.5, -6,      0, 1, 1,
+
+		 0.5,  0.5, -5,      1, 0, 0,
+		 0.5, -0.5, -5,      0, 1, 0,
+		-0.5,  0.5, -5,      0, 0, 1,
+		-0.5, -0.5, -5,      0, 1, 1
+	};
+	GLuint indices[] = { 0, 1, 2, 1, 2, 3, 4, 5, 6, 5, 6, 7 };
 
 	const char* vertexShader = R"(
         #version 460
@@ -41,8 +72,14 @@ namespace GameEngine {
 
         out vec4 vertexColor;
 
+		uniform float aspect_ratio;
+		uniform mat4 model_matrix;
+		uniform mat4 view_matrix;
+		uniform mat4 projection_matrix;
+
         void main(){
-            gl_Position = vec4(pos, 1);
+			gl_Position = projection_matrix * view_matrix * model_matrix * vec4(pos, 1);
+			gl_Position.y *= aspect_ratio; 
             vertexColor = vec4(color, 1);
         }
     )";
@@ -57,7 +94,7 @@ namespace GameEngine {
         }        
     )";
 	Window::Window(uint width, uint height, std::string title)
-		: winProps({ width, height, std::move(title) })
+		: winProps({ width, height, (float)width / (float)height, std::move(title) })
 	{
 		LOG_INFO("Window created {0}x{1}", width, height);
 		int res = init();
@@ -106,6 +143,7 @@ namespace GameEngine {
 			GET_WINPROPS;
 			winProps->width = width;
 			winProps->height = height;
+			winProps->aspect_ratio = (float)width / (float)height;
 
 			WindowResizeEvent event(width, height);
 			winProps->eventCallback(event);
@@ -188,11 +226,14 @@ namespace GameEngine {
 		return 0;
 	}
 
-	
+
 
 	void Window::on_update()
 	{
 		shader->bind();
+		shader->setFloat("aspect_ratio", getAspect());
+		shader->setMat4("model_matrix", model_matrix);
+
 		glClearColor(0.5, 0.5, 0.5, 1);
 		glClear(GL_COLOR_BUFFER_BIT);
 
@@ -209,12 +250,57 @@ namespace GameEngine {
 
 		ImGui::Begin("Properties");
 
-		
+		ImGui::SliderFloat3("Scale", scale, -5, 5);
+		ImGui::SliderFloat("Rotation", &rotate, 0, 360);
+		ImGui::SliderFloat3("Camera Position", camera_position, -5, 5);
+		ImGui::SliderFloat3("Camera Rotation", camera_rotation, 0, 360);
+		ImGui::Checkbox("Perspective mode", &isPerspectiveMode);
+		if (ImGui::Button("Default")) {
+			scale[0] = 0.5;
+			scale[1] = 0.5;
+			scale[2] = 0.5;
+			rotate = 0;
+
+			camera_position[0] = 0;
+			camera_position[1] = 0;
+			camera_position[2] = 0;
+
+			camera_rotation[0] = 0;
+			camera_rotation[1] = 0;
+			camera_rotation[2] = 0;
+
+			isPerspectiveMode = true;
+		}
 
 		ImGui::End();
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		scale_matrix = {
+			scale[0], 0, 0, 0,
+			0, scale[1], 0, 0,
+			0, 0, scale[2], 0,
+			0, 0, 0, 1
+		};
+		float rotateRadians = -glm::radians(rotate);
+		rotate_matrix = {
+			cos(rotateRadians), sin(rotateRadians), 0, 0,
+			-sin(rotateRadians), cos(rotateRadians), 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1
+		};
+		model_matrix = rotate_matrix * scale_matrix;
+
+		camera.setPositionRotation(
+			glm::vec3(camera_position[0], camera_position[1], camera_position[2]),
+			glm::vec3(camera_rotation[0], camera_rotation[1], camera_rotation[2])
+		);
+		camera.setProjectionMode(
+			isPerspectiveMode ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic
+		);
+		shader->setMat4("view_matrix", camera.getViewMatrix());
+		shader->setMat4("projection_matrix", camera.getProjectionMatrix());
 
 		glfwSwapBuffers(m_window);
 		glfwPollEvents();
