@@ -39,18 +39,18 @@ void GameEngine::Camera::updateViewMatrix()
 		0, 0, 1, 0,
 		-m_position[0], -m_position[1], -m_position[2], 1
 	};
-	float rotateRadians_x = glm::radians(m_rotation.x);
+	float rotateRadians_x = -glm::radians(m_rotation.x);
 	glm::mat4 rotationMatrix_x = {
 		1, 0, 0, 0, 
-		0, -cos(rotateRadians_x), -sin(rotateRadians_x), 0,
-		0, sin(rotateRadians_x), -cos(rotateRadians_x), 0, 
+		0, cos(rotateRadians_x), sin(rotateRadians_x), 0,
+		0, -sin(rotateRadians_x), cos(rotateRadians_x), 0, 
 		0, 0, 0, 1
 	};
-	float rotateRadians_y = glm::radians(m_rotation.y);
+	float rotateRadians_y = -glm::radians(m_rotation.y);
 	glm::mat4 rotationMatrix_y = {
-		-cos(rotateRadians_y), 0, sin(rotateRadians_y), 0,
+		cos(rotateRadians_y), 0, -sin(rotateRadians_y), 0,
 		0, 1, 0, 0,
-		-sin(rotateRadians_y), 0, -cos(rotateRadians_y), 0,
+		sin(rotateRadians_y), 0, cos(rotateRadians_y), 0,
 		0, 0, 0, 1
 	};
 

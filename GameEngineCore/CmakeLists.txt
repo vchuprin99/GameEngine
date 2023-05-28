@@ -13,8 +13,9 @@ set(CORE_PRIVATE_INCLUDES
     src/rendering/OpenGL/vertexBuffer.h
     src/rendering/OpenGL/vertexArray.h
     src/rendering/OpenGL/indexBuffer.h
-
     src/rendering/camera.h
+    src/rendering/OpenGL/openGL_Renderer.h
+    src/modules/moduleUI.h
 )
 set(CORE_PRIVATE_SOURCES 
     src/application.cpp
@@ -23,8 +24,9 @@ set(CORE_PRIVATE_SOURCES
     src/rendering/OpenGL/vertexBuffer.cpp
     src/rendering/OpenGL/vertexArray.cpp
     src/rendering/OpenGL/indexBuffer.cpp
-    
     src/rendering/camera.cpp
+    src/rendering/OpenGL/openGL_Renderer.cpp
+    src/modules/moduleUI.cpp
 )
 
 add_library(core STATIC ${CORE_PUBLIC_INCLUDES} ${CORE_PRIVATE_INCLUDES} ${CORE_PRIVATE_SOURCES})

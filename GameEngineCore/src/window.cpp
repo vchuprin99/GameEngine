@@ -5,22 +5,19 @@
 #include "rendering/OpenGL/vertexArray.h"
 #include "rendering/OpenGL/indexBuffer.h"
 #include "rendering/camera.h"
-
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <log.h>
-
-#include <glm/mat4x4.hpp>
+#include "rendering/OpenGL/openGL_Renderer.h"
+#include "modules/moduleUI.h"
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 
-#define GET_WINPROPS WinProps* winProps = reinterpret_cast<WinProps*>(glfwGetWindowUserPointer(window))
+#include <GLFW/glfw3.h>
+#include <log.h>
+
+#include <glm/mat4x4.hpp>
 
 namespace GameEngine {
-	static bool m_gladInitialized = false;
-
 	std::unique_ptr<Shader> shader;
 	std::unique_ptr<VertexArray> vertexArray;
 	std::unique_ptr<VertexBuffer> vertexBuffer;
@@ -98,21 +95,22 @@ namespace GameEngine {
 	{
 		LOG_INFO("Window created {0}x{1}", width, height);
 		int res = init();
-
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
-		ImGui_ImplOpenGL3_Init();
-		ImGui_ImplGlfw_InitForOpenGL(m_window, true);
 	}
 
 	Window::~Window()
 	{
+		ModuleUI::shutdown();
 		shutdown();
 	}
 
 	int Window::init()
 	{
+		glfwSetErrorCallback([](int error_code, const char* description) {
+			LOG_ERR("GLFW error: {}", description);
+		});
+
 		if (!glfwInit()) {
+			LOG_CRIT("GLFW initialization failure");
 			return -1;
 		}
 
@@ -123,24 +121,21 @@ namespace GameEngine {
 		m_window = glfwCreateWindow(winProps.width, winProps.height, winProps.title.c_str(), NULL, NULL);
 		if (!m_window)
 		{
-			LOG_ERR("Unable to create window");
-			glfwTerminate();
-			return -1;
+			LOG_CRIT("Window creation failure");
+			return -2;
 		}
-		glfwMakeContextCurrent(m_window);
+		if (!OpenGL_Renderer::init(m_window)) {
+			LOG_CRIT("OpenGL renderer initialization failure");
+			return -3;
+		}
+
+		LOG_INFO("OpenGL version - {}", OpenGL_Renderer::getVersion());
+		LOG_INFO("Renderer - {}", OpenGL_Renderer::getRenderer());
+
 		glfwSetWindowUserPointer(m_window, &winProps);
 
-		if (!m_gladInitialized) {
-			if (!gladLoadGL()) {
-				LOG_ERR("Unable to init glad");
-				return -1;
-			}
-			LOG_INFO("GLAD initialized");
-			m_gladInitialized = true;
-		}
-
 		glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
-			GET_WINPROPS;
+			WinProps* winProps = reinterpret_cast<WinProps*>(glfwGetWindowUserPointer(window));
 			winProps->width = width;
 			winProps->height = height;
 			winProps->aspect_ratio = (float)width / (float)height;
@@ -149,16 +144,16 @@ namespace GameEngine {
 			winProps->eventCallback(event);
 			});
 		glfwSetWindowCloseCallback(m_window, [](GLFWwindow* window) {
-			GET_WINPROPS;
+			WinProps* winProps = reinterpret_cast<WinProps*>(glfwGetWindowUserPointer(window));
 
 			WindowCloseEvent event;
 			winProps->eventCallback(event);
 			});
 		glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
-			glViewport(0, 0, width, height);
+			OpenGL_Renderer::setViewPort(width, height);
 			});
 		glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-			GET_WINPROPS;
+			WinProps* winProps = reinterpret_cast<WinProps*>(glfwGetWindowUserPointer(window));
 
 			switch (action)
 			{
@@ -180,19 +175,19 @@ namespace GameEngine {
 			}
 			});
 		glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos) {
-			GET_WINPROPS;
+			WinProps* winProps = reinterpret_cast<WinProps*>(glfwGetWindowUserPointer(window));
 
 			MouseMovedEvent event(xpos, ypos);
 			winProps->eventCallback(event);
 			});
 		glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) {
-			GET_WINPROPS;
+			WinProps* winProps = reinterpret_cast<WinProps*>(glfwGetWindowUserPointer(window));
 
 			MouseScrolledEvent event(xoffset);
 			winProps->eventCallback(event);
 			});
 		glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods) {
-			GET_WINPROPS;
+			WinProps* winProps = reinterpret_cast<WinProps*>(glfwGetWindowUserPointer(window));
 
 			switch (action)
 			{
@@ -208,6 +203,8 @@ namespace GameEngine {
 			}
 			}
 			});
+
+		ModuleUI::init(m_window);
 
 		BufferLayout bufferLayout{
 			ShaderDataType::Float3,
@@ -231,51 +228,11 @@ namespace GameEngine {
 	void Window::on_update()
 	{
 		shader->bind();
+		indexBuffer->bind();
 		shader->setFloat("aspect_ratio", getAspect());
 		shader->setMat4("model_matrix", model_matrix);
 
-		glClearColor(0.5, 0.5, 0.5, 1);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		indexBuffer->bind();
-		glDrawElements(GL_TRIANGLES, vertexArray->getIndicesCount(), GL_UNSIGNED_INT, nullptr);
-
-		ImGuiIO& io = ImGui::GetIO();
-		io.DisplaySize.x = static_cast<float>(getWidth());
-		io.DisplaySize.y = static_cast<float>(getHeight());
-
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-
-		ImGui::Begin("Properties");
-
-		ImGui::SliderFloat3("Scale", scale, -5, 5);
-		ImGui::SliderFloat("Rotation", &rotate, 0, 360);
-		ImGui::SliderFloat3("Camera Position", camera_position, -5, 5);
-		ImGui::SliderFloat3("Camera Rotation", camera_rotation, 0, 360);
-		ImGui::Checkbox("Perspective mode", &isPerspectiveMode);
-		if (ImGui::Button("Default")) {
-			scale[0] = 0.5;
-			scale[1] = 0.5;
-			scale[2] = 0.5;
-			rotate = 0;
-
-			camera_position[0] = 0;
-			camera_position[1] = 0;
-			camera_position[2] = 0;
-
-			camera_rotation[0] = 0;
-			camera_rotation[1] = 0;
-			camera_rotation[2] = 0;
-
-			isPerspectiveMode = true;
-		}
-
-		ImGui::End();
-
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		OpenGL_Renderer::clear();
 
 		scale_matrix = {
 			scale[0], 0, 0, 0,
@@ -301,6 +258,38 @@ namespace GameEngine {
 		);
 		shader->setMat4("view_matrix", camera.getViewMatrix());
 		shader->setMat4("projection_matrix", camera.getProjectionMatrix());
+
+		OpenGL_Renderer::draw(*vertexArray);
+
+		ModuleUI::updateBegin();
+
+		
+
+		ImGui::Begin("Properties");
+
+		ImGui::SliderFloat3("Scale", scale, -5, 5);
+		ImGui::SliderFloat("Rotation", &rotate, 0, 360);
+		ImGui::SliderFloat3("Camera Position", camera_position, -5, 5);
+		ImGui::SliderFloat3("Camera Rotation", camera_rotation, 0, 360);
+		ImGui::Checkbox("Perspective mode", &isPerspectiveMode);
+		if (ImGui::Button("Default")) {
+			scale[0] = 0.5;
+			scale[1] = 0.5;
+			scale[2] = 0.5;
+			rotate = 0;
+
+			camera_position[0] = 0;
+			camera_position[1] = 0;
+			camera_position[2] = 0;
+
+			camera_rotation[0] = 0;
+			camera_rotation[1] = 0;
+			camera_rotation[2] = 0;
+
+			isPerspectiveMode = true;
+		}
+		ImGui::End();
+		ModuleUI::updateDraw();
 
 		glfwSwapBuffers(m_window);
 		glfwPollEvents();
