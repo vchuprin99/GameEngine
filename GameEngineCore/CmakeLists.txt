@@ -6,6 +6,7 @@ set(CORE_PUBLIC_INCLUDES
     include/log.h
     include/application.h
     include/events.h
+    include/rendering/camera.h
 )
 set(CORE_PRIVATE_INCLUDES
     include/window.h
@@ -13,7 +14,6 @@ set(CORE_PRIVATE_INCLUDES
     src/rendering/OpenGL/vertexBuffer.h
     src/rendering/OpenGL/vertexArray.h
     src/rendering/OpenGL/indexBuffer.h
-    src/rendering/camera.h
     src/rendering/OpenGL/openGL_Renderer.h
     src/modules/moduleUI.h
 )

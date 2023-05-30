@@ -21,7 +21,7 @@ namespace GameEngine {
 		Window& operator=(const Window&) = delete;
 		Window& operator=(Window&&) = delete;
 
-		void on_update();
+		void onUpdate();
 		inline uint getWidth() const { return winProps.width; }
 		inline uint getHeight() const { return winProps.height; }
 		inline float getAspect() const { return winProps.aspect_ratio; }

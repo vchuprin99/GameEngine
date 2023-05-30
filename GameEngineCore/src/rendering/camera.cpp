@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "rendering/camera.h"
 
 GameEngine::Camera::Camera(const glm::vec3& position, const glm::vec3& rotation, const ProjectionMode projectionMode)
 {
