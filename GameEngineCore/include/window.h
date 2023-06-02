@@ -5,6 +5,8 @@
 #include <string>
 #include <functional>
 
+#include <glm/vec2.hpp>
+
 typedef unsigned int uint;
 
 struct GLFWwindow;
@@ -26,6 +28,10 @@ namespace GameEngine {
 		inline uint getHeight() const { return winProps.height; }
 		inline float getAspect() const { return winProps.aspect_ratio; }
 		inline void setEventCallback(const EventCallbackFn& fn) { winProps.eventCallback = fn; }
+		glm::vec2 getCursorPos() const;
+		void enableCursor();
+		void disableCursor();
+		void setCursorPos(const glm::vec2& pos);
 
 	private:
 		int init();

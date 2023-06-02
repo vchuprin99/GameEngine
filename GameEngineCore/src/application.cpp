@@ -4,9 +4,10 @@
 #include "rendering/OpenGL/vertexBuffer.h"
 #include "rendering/OpenGL/vertexArray.h"
 #include "rendering/OpenGL/indexBuffer.h"
-#include "rendering/camera.h"
+#include "camera.h"
 #include "rendering/OpenGL/openGL_Renderer.h"
 #include "modules/moduleUI.h"
+#include "input.h"
 
 #include <imgui/imgui.h>
 
@@ -26,19 +27,24 @@ namespace GameEngine {
     glm::mat4 rotate_matrix;
     glm::mat4 model_matrix;
 
+    float rotate;
+
     float points[] = {
-         0.5,  0.5, -6,      1, 0, 0,
-         0.5, -0.5, -6,      0, 1, 0,
-        -0.5,  0.5, -6,      0, 0, 1,
-        -0.5, -0.5, -6,      0, 1, 1,
-
-         0.5,  0.5, -5,      1, 0, 0,
-         0.5, -0.5, -5,      0, 1, 0,
-        -0.5,  0.5, -5,      0, 0, 1,
-        -0.5, -0.5, -5,      0, 1, 1
+        -0.5,  0.5,  0.5,      1, 1, 1, // 0
+        -0.5,  0.5, -0.5,      1, 1, 1, // 1
+        -0.5, -0.5,  0.5,      1, 1, 1, // 2
+        -0.5, -0.5, -0.5,      1, 1, 1, // 3
+           
+        0.5,  0.5,  0.5,      1, 0, 0, // 4
+        0.5,  0.5, -0.5,      0, 1, 0, // 5
+        0.5, -0.5,  0.5,      0, 0, 1, // 6
+        0.5, -0.5, -0.5,      0, 1, 1  // 7
     };
-    GLuint indices[] = { 0, 1, 2, 1, 2, 3, 4, 5, 6, 5, 6, 7 };
-
+    GLuint indices[] = { 
+        0, 1, 2, 1, 2, 3, 
+        4, 5, 6, 5, 6, 7,
+    };
+    
     const char* vertexShader = R"(
         #version 460
 
@@ -69,23 +75,53 @@ namespace GameEngine {
         }        
     )";
 
+    Application::Application()
+        : camera({ 0, 0, 2 })
+    {
+
+    }
+    Application::~Application()
+    {
+
+    }
+
     int Application::start(uint width, uint height, const char* title)
     {
         LOG_INFO("Application started");
 
         m_window = std::make_unique<Window>(width, height, title);
+        lastCursorPos = getCursorPos();
+
         m_window->setEventCallback([&](BaseEvent& e) {
             m_dispatcher.dispacth(e);
-            });
+        });
 
         m_dispatcher.addEventListener<WindowCloseEvent>([&](WindowCloseEvent& e) {
             //LOG_INFO("Window close event");
             m_isWindowClosed = true;
 
-            });
+        });
+        m_dispatcher.addEventListener<KeyPressedEvent>([&](KeyPressedEvent& e) {
+            Input::pressKey(e.getKeyCode());
+            onKeyPressed(e.getKeyCode());
+        });
+        m_dispatcher.addEventListener<KeyReleasedEvent>([&](KeyReleasedEvent& e) {
+            Input::releaseKey(e.getKeyCode());
+        });
+        m_dispatcher.addEventListener<MouseButtonPressedEvent>([&](MouseButtonPressedEvent& e) {
+            Input::pressMouseButton(e.getButton());
+            onMouseButtonPressed(e.getButton());
+        });
+        m_dispatcher.addEventListener<MouseButtonReleasedEvent>([&](MouseButtonReleasedEvent& e) {
+            Input::releaseMouseButton(e.getButton());
+        });
+        m_dispatcher.addEventListener<MouseMovedEvent>([&](MouseMovedEvent& e) {
+            //LOG_INFO("Mouse moved on {0}x{1}", e.getX(), e.getY());
+            onMouseMoved(e.getX(), e.getY());
+        });
 
         // ==========================================================================================
-        BufferLayout bufferLayout{
+        BufferLayout bufferLayout {
             ShaderDataType::Float3,
             ShaderDataType::Float3
         };
@@ -109,24 +145,21 @@ namespace GameEngine {
             OpenGL_Renderer::clear();
 
             scale_matrix = {
-                scale[0], 0, 0, 0,
-                0, scale[1], 0, 0,
-                0, 0, scale[2], 0,
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
                 0, 0, 0, 1
             };
-            float rotateRadians = -glm::radians(rotate);
+            
+            rotate += 0.01;
             rotate_matrix = {
-                cos(rotateRadians), sin(rotateRadians), 0, 0,
-                -sin(rotateRadians), cos(rotateRadians), 0, 0,
+                cos(rotate), -sin(rotate), 0, 0,
+                sin(rotate), cos(rotate), 0, 0,
                 0, 0, 1, 0,
                 0, 0, 0, 1
             };
             model_matrix = rotate_matrix * scale_matrix;
 
-            camera.setPositionRotation(
-                glm::vec3(camera_position[0], camera_position[1], camera_position[2]),
-                glm::vec3(camera_rotation[0], camera_rotation[1], camera_rotation[2])
-            );
             camera.setProjectionMode(
                 isPerspectiveMode ? Camera::ProjectionMode::Perspective : Camera::ProjectionMode::Orthographic
             );

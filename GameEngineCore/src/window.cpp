@@ -21,6 +21,30 @@ namespace GameEngine {
 		shutdown();
 	}
 
+	glm::vec2 Window::getCursorPos() const
+	{
+		double x;
+		double y;
+		glfwGetCursorPos(m_window, &x, &y);
+
+		return { x, y };
+	}
+
+	void Window::enableCursor()
+	{
+		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	}
+
+	void Window::disableCursor()
+	{
+		glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+
+	void Window::setCursorPos(const glm::vec2& pos)
+	{
+		glfwSetCursorPos(m_window, pos.x, pos.y);
+	}
+
 	int Window::init()
 	{
 		glfwSetErrorCallback([](int error_code, const char* description) {
@@ -76,17 +100,17 @@ namespace GameEngine {
 			switch (action)
 			{
 			case GLFW_PRESS: {
-				KeyPressedEvent event(key, false);
+				KeyPressedEvent event(static_cast<KeyCode>(key), false);
 				winProps->eventCallback(event);
 				break;
 			}
 			case GLFW_RELEASE: {
-				KeyReleasedEvent event(key);
+				KeyReleasedEvent event(static_cast<KeyCode>(key));
 				winProps->eventCallback(event);
 				break;
 			}
 			case GLFW_REPEAT: {
-				KeyPressedEvent event(key, true);
+				KeyPressedEvent event(static_cast<KeyCode>(key), true);
 				winProps->eventCallback(event);
 				break;
 			}
@@ -104,23 +128,28 @@ namespace GameEngine {
 			MouseScrolledEvent event(xoffset);
 			winProps->eventCallback(event);
 			});
-		glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods) {
+		glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods) 
+		{
 			WinProps* winProps = reinterpret_cast<WinProps*>(glfwGetWindowUserPointer(window));
+
+			double xpos, ypos;
+			glfwGetCursorPos(window, &xpos, &ypos);
 
 			switch (action)
 			{
-			case GLFW_PRESS: {
-				MouseButtonPressedEvent event(button);
-				winProps->eventCallback(event);
-				break;
+				case GLFW_PRESS: {
+					MouseButtonPressedEvent event(static_cast<MouseButton>(button), xpos, ypos);
+					winProps->eventCallback(event);
+					break;
+				}
+				case GLFW_RELEASE: {
+					MouseButtonReleasedEvent event(static_cast<MouseButton>(button), xpos, ypos);
+					winProps->eventCallback(event);
+					break;
+				}
 			}
-			case GLFW_RELEASE: {
-				MouseButtonReleasedEvent event(button);
-				winProps->eventCallback(event);
-				break;
-			}
-			}
-			});
+		}
+		);
 
 		return 0;
 	}

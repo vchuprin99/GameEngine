@@ -1,5 +1,7 @@
 #pragma once
 
+#include "keys.h"
+
 #include <functional>
 #include <array>
 
@@ -71,27 +73,27 @@ namespace GameEngine {
 	};
 	class KeyPressedEvent : public BaseEvent {
 	public:
-		KeyPressedEvent(int keyCode, const bool repeated)
+		KeyPressedEvent(const KeyCode keyCode, const bool repeated)
 		: m_keyCode(keyCode), m_repeated(repeated) {}
 
 		EVENT_CLASS_TYPE(KeyPressed);
 
-		inline int getKeyCode() const { return m_keyCode; }
+		inline KeyCode getKeyCode() const { return m_keyCode; }
 		inline bool isRepeated() const { return m_repeated; }
 	private:
-		int m_keyCode;
+		KeyCode m_keyCode;
 		bool m_repeated;
 	};
 	class KeyReleasedEvent : public BaseEvent {
 	public:
-		KeyReleasedEvent(int keyCode)
+		KeyReleasedEvent(KeyCode keyCode)
 			: m_keyCode(keyCode) {}
 
 		EVENT_CLASS_TYPE(KeyReleased);
 
-		inline int getKeyCode() const { return m_keyCode; }
+		inline KeyCode getKeyCode() const { return m_keyCode; }
 	private:
-		int m_keyCode;
+		KeyCode m_keyCode;
 	};
 	class MouseMovedEvent : public BaseEvent {
 	public:
@@ -118,24 +120,32 @@ namespace GameEngine {
 	};
 	class MouseButtonPressedEvent : public BaseEvent {
 	public:
-		MouseButtonPressedEvent(int button)
-			: m_button(button) {}
+		MouseButtonPressedEvent(MouseButton button, double x, double y)
+			: m_button(button), m_x(x), m_y(y) {}
 
 		EVENT_CLASS_TYPE(MouseButtonPressed);
 
-		inline int getButton() const { return m_button; }
+		inline MouseButton getButton() const { return m_button; }
+		inline double getX() const { return m_x; }
+		inline double getY() const { return m_y; }
 	private:
-		int m_button;
+		MouseButton m_button;
+
+		double m_x, m_y;
 	};
 	class MouseButtonReleasedEvent : public BaseEvent {
 	public:
-		MouseButtonReleasedEvent(int button)
-			: m_button(button) {}
+		MouseButtonReleasedEvent(MouseButton button, double x, double y)
+			: m_button(button), m_x(x), m_y(y) {}
 
 		EVENT_CLASS_TYPE(MouseButtonReleased);
 
-		inline int getButton() const { return m_button; }
+		inline MouseButton getButton() const { return m_button; }
+		inline double getX() const { return m_x; }
+		inline double getY() const { return m_y; }
 	private:
-		int m_button;
+		MouseButton m_button;
+
+		double m_x, m_y;
 	};
 }

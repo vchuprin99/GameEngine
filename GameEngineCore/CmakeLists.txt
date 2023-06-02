@@ -6,7 +6,9 @@ set(CORE_PUBLIC_INCLUDES
     include/log.h
     include/application.h
     include/events.h
-    include/rendering/camera.h
+    include/camera.h
+    include/keys.h
+    include/input.h
 )
 set(CORE_PRIVATE_INCLUDES
     include/window.h
@@ -20,6 +22,7 @@ set(CORE_PRIVATE_INCLUDES
 set(CORE_PRIVATE_SOURCES 
     src/application.cpp
     src/window.cpp
+    src/input.cpp
     src/rendering/OpenGL/shader.cpp
     src/rendering/OpenGL/vertexBuffer.cpp
     src/rendering/OpenGL/vertexArray.cpp

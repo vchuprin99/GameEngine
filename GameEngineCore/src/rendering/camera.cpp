@@ -1,4 +1,4 @@
-#include "rendering/camera.h"
+#include "camera.h"
 
 GameEngine::Camera::Camera(const glm::vec3& position, const glm::vec3& rotation, const ProjectionMode projectionMode)
 {
@@ -9,20 +9,66 @@ GameEngine::Camera::Camera(const glm::vec3& position, const glm::vec3& rotation,
 void GameEngine::Camera::setPosition(const glm::vec3& position)
 {
 	m_position = position;
-	updateViewMatrix();
+	m_updateViewMatrix = true;
 }
 
 void GameEngine::Camera::setRotation(const glm::vec3& rotation)
 {
 	m_rotation = rotation;
-	updateViewMatrix();
+	m_updateViewMatrix = true;
 }
 
 void GameEngine::Camera::setPositionRotation(const glm::vec3& position, const glm::vec3& rotation)
 {
 	m_position = position;
 	m_rotation = rotation;
-	updateViewMatrix();
+	m_updateViewMatrix = true;
+}
+
+void GameEngine::Camera::moveForward(const float delta) 
+{
+	m_position += m_direction * delta;
+	m_updateViewMatrix = true;
+}
+void GameEngine::Camera::moveRight(const float delta) 
+{
+	m_position += m_right * delta;
+	m_updateViewMatrix = true;
+}
+void GameEngine::Camera::moveUp(const float delta) 
+{
+	m_position += m_up * delta;
+	m_updateViewMatrix = true;
+}
+
+void GameEngine::Camera::moveAndRotate(const glm::vec3& move_delta, const glm::vec3& rotate_delta)
+{
+	m_position += m_direction * move_delta.x;
+	m_position += m_right * move_delta.y;
+	m_position += m_up * move_delta.z;
+	m_rotation += rotate_delta;
+
+	m_updateViewMatrix = true;
+}
+
+void GameEngine::Camera::rotate(const glm::vec3& rotate_delta)
+{
+	m_rotation += rotate_delta;
+
+	m_updateViewMatrix = true;
+}
+
+const glm::mat4& GameEngine::Camera::getViewMatrix()
+{
+	if (m_updateViewMatrix) {
+		updateViewMatrix();
+	}
+	return m_viewMatrix;
+}
+
+const glm::mat4& GameEngine::Camera::getProjectionMatrix() const
+{
+	return m_projectionMatrix;
 }
 
 void GameEngine::Camera::setProjectionMode(const ProjectionMode projectionMode)
@@ -33,28 +79,27 @@ void GameEngine::Camera::setProjectionMode(const ProjectionMode projectionMode)
 
 void GameEngine::Camera::updateViewMatrix()
 {
-	glm::mat4 translateMatrix = {
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		-m_position[0], -m_position[1], -m_position[2], 1
+	const glm::mat3 rotationMatrix_x = {
+		1, 0, 0,
+		0, cos(m_rotation.x), -sin(m_rotation.x),
+		0, sin(m_rotation.x), cos(m_rotation.x),
 	};
-	float rotateRadians_x = -glm::radians(m_rotation.x);
-	glm::mat4 rotationMatrix_x = {
-		1, 0, 0, 0, 
-		0, cos(rotateRadians_x), sin(rotateRadians_x), 0,
-		0, -sin(rotateRadians_x), cos(rotateRadians_x), 0, 
-		0, 0, 0, 1
+	const glm::mat3 rotationMatrix_y = {
+		cos(m_rotation.y), 0, -sin(m_rotation.y),
+		0, 1, 0,
+		sin(m_rotation.y), 0, cos(m_rotation.y),
 	};
-	float rotateRadians_y = -glm::radians(m_rotation.y);
-	glm::mat4 rotationMatrix_y = {
-		cos(rotateRadians_y), 0, -sin(rotateRadians_y), 0,
-		0, 1, 0, 0,
-		sin(rotateRadians_y), 0, cos(rotateRadians_y), 0,
-		0, 0, 0, 1
+	const glm::mat3 rotationMatrix_z = {
+		cos(m_rotation.z), -sin(m_rotation.z), 0,
+		sin(m_rotation.z), cos(m_rotation.z), 0,
+		0, 0, 1,
 	};
+	const glm::mat3 euler_rotateMatrix = rotationMatrix_z * rotationMatrix_y * rotationMatrix_x;
+	m_direction = glm::normalize(euler_rotateMatrix * s_world_forward);
+	m_right = glm::normalize(euler_rotateMatrix * s_world_right);
+	m_up = glm::cross(m_right, m_direction);
 
-	m_viewMatrix = rotationMatrix_x * rotationMatrix_y * translateMatrix;
+	m_viewMatrix = glm::lookAt(m_position, m_position + m_direction, m_up);
 }
 
 void GameEngine::Camera::updateProjectionMatrix()
